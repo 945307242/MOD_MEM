@@ -257,6 +257,7 @@ static NSString*分组标题[100];
 }
 
 #pragma mark - 各种UI添加操作
+static 执行函数 操作函数;
 + (void)添加开关:(NSString *)标题 排序:(int)排序 绑定:(执行函数)绑定
 {
     操作ID=分组排序*100+排序;
@@ -265,14 +266,15 @@ static NSString*分组标题[100];
     switchView[操作ID].on=开关状态[操作ID];
     [switchView[操作ID] addTarget:self action:@selector(调用) forControlEvents:UIControlEventValueChanged];
     UI类型[操作ID]=@"开关";
-    
+    操作函数=绑定;
 }
 +(void)调用
 {
     
     if ([UI类型[操作ID] isEqual:@"开关"]) {
         开关状态[操作ID]=!开关状态[操作ID];
-        NSLog(@"开启 调用 操作id=%d",开关状态[操作ID]);
+        
+        操作函数();
     }
 }
 +(void)添加分组:(NSString *)标题 功能数:(int)功能数 子功能:(子功能)子功能
