@@ -25,16 +25,11 @@ static UIView *图标视图;
 static UITableView *表格视图;
 static NSTimer *顶层视图定时器;
 static float 初始音量;
-
-static UISwitch* switchView[1000];
-static NSString*按钮标题[1000];
-static NSString*开关标题[1000];
-static BOOL 开关状态[1000];
 static NSString* UI类型[1000];
 
 static BOOL 展开[100];
-static int 操作ID;
-static int 分组数量=0;
+
+static int 分组数量;
 static int 分组排序=0;
 static int 功能数量[100];
 static NSString*分组标题[100];
@@ -171,7 +166,7 @@ static NSString*分组标题[100];
         [shisangeCD 转圈圈];
         图标视图.alpha=!图标视图.alpha;
         
-    }];
+        }];
 }
 
 + (void)菜单{
@@ -215,7 +210,7 @@ static NSString*分组标题[100];
         UIView *顶部背景 = [[UIView alloc] initWithFrame:CGRectMake(0,0, 菜单宽度, 40)];
         顶部背景.backgroundColor=[UIColor colorWithRed:1 green:1 blue:1 alpha:0.4];
         [菜单视图 addSubview:顶部背景];
-
+        
         //圆角设置
         UIBezierPath *maskPath = [UIBezierPath bezierPathWithRoundedRect:顶部背景.bounds byRoundingCorners:UIRectCornerTopLeft | UIRectCornerTopRight cornerRadii:CGSizeMake(15, 0)];
         CAShapeLayer *maskLayer = [[CAShapeLayer alloc] init];
@@ -228,7 +223,7 @@ static NSString*分组标题[100];
         UIPanGestureRecognizer *pan=[[UIPanGestureRecognizer alloc]initWithTarget:self action:@selector(拖动事件:)];
         [顶部背景 addGestureRecognizer:pan];
         
-       
+        
         //顶部LOGO
         UILabel *BT = [[UILabel alloc] initWithFrame:CGRectMake(0, 10, 顶部背景.frame.size.width, 20)];
         BT.numberOfLines = 0;
@@ -242,9 +237,6 @@ static NSString*分组标题[100];
         
     });
     
-    
-    
-    
     [UIView animateWithDuration:0.5 animations:^{
         菜单视图.alpha=!菜单视图.alpha;
         [shisangeCD 转圈圈];
@@ -252,42 +244,109 @@ static NSString*分组标题[100];
     if(菜单视图.alpha==1){
         
         [菜单视图 addSubview:图标视图];
+        [UIView animateWithDuration:0.5 animations:^{
+            图标视图.alpha=0.7;
+        }];
+    }else{
+        [UIView animateWithDuration:0.5 animations:^{
+            图标视图.alpha=1;
+        }];
     }
     
 }
 
+
+
 #pragma mark - 各种UI添加操作
-static 执行函数 操作函数;
-+ (void)添加开关:(NSString *)标题 排序:(int)排序 绑定:(执行函数)绑定
+#pragma mark - 添加分组
+static UISwitch* switchView[1000];
+static NSString*开关标题[1000];
+static BOOL 开关状态[1000];
+static int 排序;
++ (void)添加分组:(NSString *)标题 是否展开:(BOOL)是否展开 功能数:(int)功能数 子功能:(子功能)子功能
 {
-    操作ID=分组排序*100+排序;
-    开关标题[操作ID]=标题;
-    switchView[操作ID] = [[UISwitch alloc] init];
-    switchView[操作ID].on=开关状态[操作ID];
-    [switchView[操作ID] addTarget:self action:@selector(调用) forControlEvents:UIControlEventValueChanged];
-    UI类型[操作ID]=@"开关";
-    操作函数=绑定;
-}
-+(void)调用
-{
-    
-    if ([UI类型[操作ID] isEqual:@"开关"]) {
-        开关状态[操作ID]=!开关状态[操作ID];
-        
-        操作函数();
-    }
-}
-+(void)添加分组:(NSString *)标题 功能数:(int)功能数 子功能:(子功能)子功能
-{
+    展开[分组数量]=是否展开;
     分组数量++;
     分组排序++;
     功能数量[分组排序-1]=功能数+1;
     分组标题[分组排序-1]=标题;
     子功能();
+    排序=0;
+    
 }
+#pragma mark - 添加开关
+static int 操作ID;
+static 执行函数 开启代码[1000],关闭代码[1000];
++ (void)添加开关:(NSString *)标题 开启:(执行函数)开启 关闭:(执行函数)关闭
+{
+    操作ID=分组排序*100+排序++;
+    
+    开关标题[操作ID]=标题;
+    switchView[操作ID] = [[UISwitch alloc] init];
+    switchView[操作ID].on=开关状态[操作ID];
+    switchView[操作ID].tag=操作ID;
+    [switchView[操作ID] addTarget:self action:@selector(开关调用:) forControlEvents:UIControlEventValueChanged];
+    UI类型[操作ID]=@"开关";
+    开启代码[操作ID]=开启;
+    关闭代码[操作ID]=关闭;
+    NSLog(@"操作ID=%d",操作ID);
+    
+}
++(void)开关调用:(UISwitch*)Switch
+{
+    int tag=(int)Switch.tag;
+    开关状态[tag]=!开关状态[tag];
+    if (开关状态[tag]) {
+        开启代码[tag]();
+    }else{
+        关闭代码[tag]();
+    }
+}
+#pragma mark - 添加按钮
+static UIButton* button[1000];
+static NSString*按钮标题[1000];
+static 执行函数 按钮执行[1000];
++ (void)添加按钮:(NSString *)标题 点击操作:(执行函数)点击操作 尺寸:(CGRect)Rect
+{
+    操作ID=分组排序*100+排序++;
+    
+    按钮标题[操作ID]=标题;
+    UI类型[操作ID]=@"按钮";
+    按钮执行[操作ID]=点击操作;
+    button[操作ID] = [[UIButton alloc]init];
+    button[操作ID].layer.cornerRadius = 10.0;
+    [button[操作ID] setTitle:@"粘贴" forState:UIControlStateNormal];
+    [button[操作ID] setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];//p1颜色
+    button[操作ID].backgroundColor = [UIColor colorWithRed:34/255.0 green:181/255.0 blue:115/250.0 alpha:1];
+    button[操作ID].frame = Rect;
+    button[操作ID].layer.borderColor = [[UIColor whiteColor] CGColor];//边框颜色
+    button[操作ID].layer.borderWidth = 1.0f;//边框大小
+    button[操作ID].tag=操作ID;
+    [button[操作ID].titleLabel setFont:[UIFont systemFontOfSize:15]];//字体大小
+    [button[操作ID] addTarget:self action:@selector(按钮调用:) forControlEvents:UIControlEventTouchUpInside];
+    
+}
++(void)按钮调用:(UIButton*)Button
+{
+    int tag=(int)Button.tag;
+    按钮执行[tag]();
+    
+}
+static 自定义视图 视图[1000];
+static UIView* 父级视图[1000];
++ (UIView *)添加自定义视图:(UIView *)视图
+{
+    操作ID=分组排序*100+排序++;
+    
+    父级视图[操作ID]=视图;
+    UI类型[操作ID]=@"视图";
+    return 父级视图[操作ID];
+}
+
 
 #pragma mark - TbaleView的数据源代理方法实现
 + (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    
     static NSString *ID = @"cell";
     UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
     if (cell == nil){
@@ -295,32 +354,63 @@ static 执行函数 操作函数;
     }
     cell.textLabel.textColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:1.0f];
     cell.textLabel.font = [UIFont boldSystemFontOfSize:14];
-    for (int i=0; i<分组数量; i++) {
-        if (indexPath.section==i) {
-            //设置每个分组的标题
-            if (indexPath.row==0) {
-                cell.textLabel.text = 分组标题[i];
-                if(!展开[i]){
-                    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+    if (分组数量!=0) {
+        for (int i=0; i<分组数量; i++) {
+            if (indexPath.section==i) {
+                //设置每个分组的标题
+                if (indexPath.row==0) {
+                    cell.textLabel.text = 分组标题[i];
+                    if(!展开[i]){
+                        cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+                    }else{
+                        cell.accessoryType = UITableViewCellAccessoryCheckmark;
+                        cell.tintColor=[UIColor systemRedColor];
+                    }
                 }else{
-                    cell.accessoryType = UITableViewCellAccessoryCheckmark;
-                    cell.tintColor=[UIColor systemRedColor];
+                    //设置每个分组的子功能标题
+                    int cj=(((int)indexPath.section+1)*100)+(int)indexPath.row-1;
+                    
+                    if ([UI类型[cj] isEqual:@"开关"]) {
+                        cell.textLabel.text = 开关标题[cj];
+                        cell.accessoryView=switchView[cj];
+                    }
+                    if ([UI类型[cj] isEqual:@"按钮"]) {
+                        cell.textLabel.text = 按钮标题[cj];
+                        cell.accessoryView=button[cj];
+                    }
+                    if ([UI类型[cj] isEqual:@"视图"]) {
+                        cell.textLabel.text = 按钮标题[cj];
+                        [cell addSubview:父级视图[cj]];
+                        
+                    }
+                    
                 }
-            }else{
-                //设置每个分组的子功能标题
-                int cj=(((int)indexPath.section+1)*100)+(int)indexPath.row-1;
-                NSLog(@"序号=%d i=%d",cj,(int)indexPath.row-1);
-                if ([UI类型[cj] isEqual:@"开关"]) {
-                    cell.textLabel.text = 开关标题[cj];
-                    cell.accessoryView=switchView[cj];
+            }
+            
+            
+        }
+    }else{
+        //设置每个分组的子功能标题
+        for (int i=0; i<排序; i++) {
+            if (indexPath.row==i) {
+                if ([UI类型[i] isEqual:@"开关"]) {
+                    cell.textLabel.text = 开关标题[i];
+                    cell.accessoryView=switchView[i];
                 }
-                
-                
+                if ([UI类型[i] isEqual:@"按钮"]) {
+                    cell.textLabel.text = 按钮标题[i];
+                    cell.accessoryView=button[i];
+                }
+                if ([UI类型[i] isEqual:@"视图"]) {
+                    cell.textLabel.text = 按钮标题[i];
+                    [cell addSubview:父级视图[i]];
+                    
+                }
             }
         }
         
-        
     }
+    
     
     
     
@@ -330,27 +420,37 @@ static 执行函数 操作函数;
 
 + (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    展开[indexPath.section]=!展开[indexPath.section];
     
+    if (indexPath.row==0) {
+        展开[indexPath.section]=!展开[indexPath.section];
+    }
     [表格视图 reloadData];
 }
 //分组
 + (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView{
-    return 分组数量+1;
+    if (分组数量==0) {
+        return 1;
+    }
+    return 分组数量;
 }
 
 #pragma mark - 第二个控制器行树
 //默认多少表格
 + (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
-    for (int i=0; i<分组数量; i++) {
-        if(section==i) //展开的
-        {
-            if (展开[section]) {
-                return 功能数量[i];
+    if (分组数量!=0) {
+        for (int i=0; i<分组数量; i++) {
+            if(section==i) //展开的
+            {
+                if (展开[section]) {
+                    return 功能数量[i];
+                }
+                return 1;
             }
-            return 1;
         }
+    }else{
+        return 排序;
     }
+    
     
     return 0;
 }
@@ -375,16 +475,18 @@ static 执行函数 操作函数;
     if (section==0) {
         headerLabel = @"到期时间:2099-02-01 22:32:03";
     }else{
-        headerLabel=@" ";
+        headerLabel=@"";
     }
-    
+    if (分组数量==0) {
+        headerLabel=@"分组错误 请先添加分组 后添加功能";
+    }
     return headerLabel;
 }
 
 + (void)tableView:(UITableView *)tableView willDisplayHeaderView:(UIView *)view forSection:(NSInteger)section
 
 {
-   
+    
 }
 
 
@@ -393,20 +495,6 @@ static 执行函数 操作函数;
 }
 
 #pragma mark - 表格样式
-
-
-
-
-#pragma mark - 调用
-
-
-+ (BOOL)textFieldShouldReturn:(UITextField *)textField
-{
-    return [textField resignFirstResponder];
-    
-}
-
-
 
 + (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath
 {

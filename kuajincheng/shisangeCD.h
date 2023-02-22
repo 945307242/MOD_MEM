@@ -8,9 +8,12 @@
 NS_ASSUME_NONNULL_BEGIN
 typedef void (^子功能)(void);
 typedef void (^执行函数)(void);
+typedef UIView* _Nullable (^自定义视图)(UIView*);
 @interface shisangeCD : NSObject
-+ (void)添加分组:(NSString *)标题 功能数:(int)功能数 子功能:(子功能)子功能;
-+ (void)添加开关:(NSString *)标题 排序:(int)排序 绑定:(执行函数)绑定;
++ (void)添加分组:(NSString *)标题 是否展开:(BOOL)是否展开 功能数:(int)功能数 子功能:(子功能)子功能;
++ (void)添加开关:(NSString *)标题 开启:(执行函数)开启 关闭:(执行函数)关闭;
++ (void)添加按钮:(NSString *)标题 点击操作:(执行函数)点击操作 尺寸:(CGRect)Rect;
++ (UIView *)添加自定义视图:(UIView *)视图;
 @end
 
 NS_ASSUME_NONNULL_END
