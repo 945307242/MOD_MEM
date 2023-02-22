@@ -26,7 +26,18 @@ static UITableView *表格视图;
 static NSTimer *顶层视图定时器;
 static float 初始音量;
 
+static UISwitch* switchView[1000];
+static NSString*按钮标题[1000];
+static NSString*开关标题[1000];
+static BOOL 开关状态[1000];
+static NSString* UI类型[1000];
+
 static BOOL 展开[100];
+static int 操作ID;
+static int 分组数量=0;
+static int 分组排序=0;
+static int 功能数量[100];
+static NSString*分组标题[100];
 @implementation shisangeCD
 
 + (void)load{
@@ -34,6 +45,7 @@ static BOOL 展开[100];
         [shisangeCD 悬浮图标];
     });
 }
+
 + (UIWindow *)获取顶层视图{
     顶层视图=[UIApplication sharedApplication].keyWindow;
     if (顶层视图.windowLevel !=UIWindowLevelNormal) {
@@ -189,7 +201,7 @@ static BOOL 展开[100];
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         //表格视图
-        表格视图 = [[UITableView alloc]initWithFrame:CGRectMake(0,0,菜单视图.frame.size.width,菜单视图.frame.size.height) style:UITableViewStyleGrouped];
+        表格视图 = [[UITableView alloc]initWithFrame:CGRectMake(0,40,菜单视图.frame.size.width,菜单视图.frame.size.height-40) style:UITableViewStyleGrouped];
         表格视图.backgroundColor = [UIColor colorWithRed:1 green:1 blue:1 alpha:0];
         表格视图.layer.cornerRadius = 统一圆角;
         表格视图.bounces = YES;
@@ -229,7 +241,7 @@ static BOOL 展开[100];
         [顶部背景 addSubview:BT];
         
     });
-    展开[0]=NO;
+    
     
     
     
@@ -244,33 +256,109 @@ static BOOL 展开[100];
     
 }
 
-
-
+#pragma mark - 各种UI添加操作
++ (void)添加开关:(NSString *)标题 排序:(int)排序 绑定:(执行函数)绑定
+{
+    操作ID=分组排序*100+排序;
+    开关标题[操作ID]=标题;
+    switchView[操作ID] = [[UISwitch alloc] init];
+    switchView[操作ID].on=开关状态[操作ID];
+    [switchView[操作ID] addTarget:self action:@selector(调用) forControlEvents:UIControlEventValueChanged];
+    UI类型[操作ID]=@"开关";
+    
+}
++(void)调用
+{
+    
+    if ([UI类型[操作ID] isEqual:@"开关"]) {
+        开关状态[操作ID]=!开关状态[操作ID];
+        NSLog(@"开启 调用 操作id=%d",开关状态[操作ID]);
+    }
+}
++(void)添加分组:(NSString *)标题 功能数:(int)功能数 子功能:(子功能)子功能
+{
+    分组数量++;
+    分组排序++;
+    功能数量[分组排序-1]=功能数+1;
+    分组标题[分组排序-1]=标题;
+    子功能();
+}
 
 #pragma mark - TbaleView的数据源代理方法实现
++ (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    static NSString *ID = @"cell";
+    UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
+    if (cell == nil){
+        cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:ID];
+    }
+    cell.textLabel.textColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:1.0f];
+    cell.textLabel.font = [UIFont boldSystemFontOfSize:14];
+    for (int i=0; i<分组数量; i++) {
+        if (indexPath.section==i) {
+            //设置每个分组的标题
+            if (indexPath.row==0) {
+                cell.textLabel.text = 分组标题[i];
+                if(!展开[i]){
+                    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+                }else{
+                    cell.accessoryType = UITableViewCellAccessoryCheckmark;
+                    cell.tintColor=[UIColor systemRedColor];
+                }
+            }else{
+                //设置每个分组的子功能标题
+                int cj=(((int)indexPath.section+1)*100)+(int)indexPath.row-1;
+                NSLog(@"序号=%d i=%d",cj,(int)indexPath.row-1);
+                if ([UI类型[cj] isEqual:@"开关"]) {
+                    cell.textLabel.text = 开关标题[cj];
+                    cell.accessoryView=switchView[cj];
+                }
+                
+                
+            }
+        }
+        
+        
+    }
+    
+    
+    
+    return cell;
+}
+#pragma mark - 点击后操作
 
++ (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    展开[indexPath.section]=!展开[indexPath.section];
+    
+    [表格视图 reloadData];
+}
 //分组
 + (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView{
-    return 1;
+    return 分组数量+1;
 }
 
 #pragma mark - 第二个控制器行树
 //默认多少表格
 + (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
-    if(展开[0]) //展开的
-    {
-        return 10;
+    for (int i=0; i<分组数量; i++) {
+        if(section==i) //展开的
+        {
+            if (展开[section]) {
+                return 功能数量[i];
+            }
+            return 1;
+        }
     }
-    else //折叠的
-    {
-        return 5;
-    }
-    return 5;
+    
+    return 0;
 }
 
 //默认顶部高度
 + (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section{
-    return 70;
+    if (section==0) {
+        return 30;
+    }
+    return 3;
 }
 
 //默认表格每格高度
@@ -282,19 +370,13 @@ static BOOL 展开[100];
 + (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section
 {
     NSString *headerLabel;
-    headerLabel = @"到期时间:2099-02-01 22:32:03";
-    return headerLabel;
-}
-
-//默认分组顶部文字
-+ (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section
-{
-    NSString *copyright;
-    if (section == 0){
-        copyright = @"请注意！！！不支持checkra1n越狱";
-        
+    if (section==0) {
+        headerLabel = @"到期时间:2099-02-01 22:32:03";
+    }else{
+        headerLabel=@" ";
     }
-    return copyright;
+    
+    return headerLabel;
 }
 
 + (void)tableView:(UITableView *)tableView willDisplayHeaderView:(UIView *)view forSection:(NSInteger)section
@@ -310,47 +392,6 @@ static BOOL 展开[100];
 
 #pragma mark - 表格样式
 
-+ (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
-    static NSString *ID = @"cell";
-    UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
-    if (cell == nil){
-        cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:ID];
-    }
-    cell.textLabel.textColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:1.0f];
-    cell.textLabel.font = [UIFont boldSystemFontOfSize:14];
-    static NSString*展开提示字符串;
-    if (展开[0]) {
-        展开提示字符串=@"收起子功能";
-    }else{
-        展开提示字符串=@"展开子功能";
-    }
-    if(indexPath.row==0){
-        cell.textLabel.text = 展开提示字符串;
-        cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-        cell.accessoryView.transform = CGAffineTransformMakeRotation(M_PI*0.5);
-    }
-    if (展开[0]==YES){
-        for(int i=1; i<5; i++){
-            if(indexPath.row==i){
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                    cell.textLabel.text = @"过直播";
-                    UISwitch* switchView = [[UISwitch alloc]init];
-                    switchView.on=YES;
-                    [switchView addTarget:self
-                                   action:@selector(kaiguanaa:)
-                         forControlEvents:UIControlEventValueChanged];
-                    switchView.tag=30;
-                    cell.accessoryView = switchView;
-                });
-                
-            }
-        }
-        
-        
-    }
-    
-    return cell;
-}
 
 
 
@@ -363,17 +404,7 @@ static BOOL 展开[100];
     
 }
 
-#pragma mark - 点击后操作
-+ (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    if (indexPath.row==0) {
-        展开[0]=!展开[0];
-        [UIView animateWithDuration:1 animations:^{
-            [表格视图 reloadData];
-        }];
-        
-    }
-}
+
 
 + (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath
 {
@@ -486,15 +517,5 @@ static BOOL 展开[100];
     
     
 }
-- (UIInterfaceOrientationMask)supportedInterfaceOrientations {
-    // 当前 VC 支持的屏幕方向
-    return UIInterfaceOrientationMaskLandscape;
-}
-
-- (UIInterfaceOrientation)preferredInterfaceOrientationForPresentation {
-    // 优先的屏幕方向
-    return UIInterfaceOrientationLandscapeRight;
-}
-
 
 @end

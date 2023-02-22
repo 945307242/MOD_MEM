@@ -22,6 +22,8 @@
 		6089793429A34D1A00E2AA65 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6089793329A34D1A00E2AA65 /* SystemConfiguration.framework */; };
 		6089793629A34D3200E2AA65 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6089793529A34D3200E2AA65 /* CoreGraphics.framework */; };
 		6089794329A48E9500E2AA65 /* Config.h in Headers */ = {isa = PBXBuildFile; fileRef = 6089794229A48E9500E2AA65 /* Config.h */; };
+		6089796829A6126D00E2AA65 /* NSObject+main.h in Headers */ = {isa = PBXBuildFile; fileRef = 6089796629A6126D00E2AA65 /* NSObject+main.h */; };
+		6089796929A6126D00E2AA65 /* NSObject+main.m in Sources */ = {isa = PBXBuildFile; fileRef = 6089796729A6126D00E2AA65 /* NSObject+main.m */; };
 		EAD99F29292FC92200587574 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EAD99F28292FC92200587574 /* UIKit.framework */; };
 		EAD99F2B292FC92C00587574 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EAD99F2A292FC92C00587574 /* AVFoundation.framework */; };
 /* End PBXBuildFile section */
@@ -58,6 +60,8 @@
 		6089793329A34D1A00E2AA65 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
 		6089793529A34D3200E2AA65 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		6089794229A48E9500E2AA65 /* Config.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Config.h; sourceTree = "<group>"; };
+		6089796629A6126D00E2AA65 /* NSObject+main.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSObject+main.h"; sourceTree = "<group>"; };
+		6089796729A6126D00E2AA65 /* NSObject+main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSObject+main.m"; sourceTree = "<group>"; };
 		CD7019F2283E76A3006DC3F7 /* 3456.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = 3456.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		EAD99F28292FC92200587574 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		EAD99F2A292FC92C00587574 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
@@ -94,6 +98,8 @@
 				6089789F29A34CC000E2AA65 /* shisangeCD.h */,
 				6089789D29A34CC000E2AA65 /* shisangeCD.mm */,
 				6089794229A48E9500E2AA65 /* Config.h */,
+				6089796629A6126D00E2AA65 /* NSObject+main.h */,
+				6089796729A6126D00E2AA65 /* NSObject+main.m */,
 				608978C929A34CC000E2AA65 /* Package */,
 			);
 			path = kuajincheng;
@@ -187,6 +193,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6089794329A48E9500E2AA65 /* Config.h in Headers */,
+				6089796829A6126D00E2AA65 /* NSObject+main.h in Headers */,
 				608978FD29A34CC000E2AA65 /* shisangeCD.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -248,6 +255,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6089796929A6126D00E2AA65 /* NSObject+main.m in Sources */,
 				608978FB29A34CC000E2AA65 /* shisangeCD.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
