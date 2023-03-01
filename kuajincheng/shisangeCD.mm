@@ -280,7 +280,6 @@ static 执行函数 开启代码[1000],关闭代码[1000];
 + (void)添加开关:(NSString *)标题 开启:(执行函数)开启 关闭:(执行函数)关闭
 {
     操作ID=分组排序*100+排序++;
-    
     开关标题[操作ID]=标题;
     switchView[操作ID] = [[UISwitch alloc] init];
     switchView[操作ID].on=开关状态[操作ID];
@@ -289,7 +288,7 @@ static 执行函数 开启代码[1000],关闭代码[1000];
     UI类型[操作ID]=@"开关";
     开启代码[操作ID]=开启;
     关闭代码[操作ID]=关闭;
-    NSLog(@"操作ID=%d",操作ID);
+    NSLog(@"分组排序=%d 操作ID=%d",分组排序,操作ID);
     
 }
 +(void)开关调用:(UISwitch*)Switch
@@ -337,7 +336,6 @@ static UIView* 父级视图[1000];
 + (UIView *)添加自定义视图:(UIView *)视图
 {
     操作ID=分组排序*100+排序++;
-    
     父级视图[操作ID]=视图;
     UI类型[操作ID]=@"视图";
     return 父级视图[操作ID];
@@ -354,60 +352,38 @@ static UIView* 父级视图[1000];
     }
     cell.textLabel.textColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:1.0f];
     cell.textLabel.font = [UIFont boldSystemFontOfSize:14];
-    if (分组数量!=0) {
-        for (int i=0; i<分组数量; i++) {
-            if (indexPath.section==i) {
-                //设置每个分组的标题
-                if (indexPath.row==0) {
-                    cell.textLabel.text = 分组标题[i];
-                    if(!展开[i]){
-                        cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-                    }else{
-                        cell.accessoryType = UITableViewCellAccessoryCheckmark;
-                        cell.tintColor=[UIColor systemRedColor];
-                    }
+    for (int i=0; i<分组数量; i++) {
+        if (indexPath.section==i) {
+            //设置每个分组的标题
+            if (indexPath.row==0) {
+                cell.textLabel.text = 分组标题[i];
+                if(!展开[i]){
+                    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
                 }else{
-                    //设置每个分组的子功能标题
-                    int cj=(((int)indexPath.section+1)*100)+(int)indexPath.row-1;
-                    
-                    if ([UI类型[cj] isEqual:@"开关"]) {
-                        cell.textLabel.text = 开关标题[cj];
-                        cell.accessoryView=switchView[cj];
-                    }
-                    if ([UI类型[cj] isEqual:@"按钮"]) {
-                        cell.textLabel.text = 按钮标题[cj];
-                        cell.accessoryView=button[cj];
-                    }
-                    if ([UI类型[cj] isEqual:@"视图"]) {
-                        cell.textLabel.text = 按钮标题[cj];
-                        [cell addSubview:父级视图[cj]];
-                        
-                    }
-                    
+                    cell.accessoryType = UITableViewCellAccessoryCheckmark;
+                    cell.tintColor=[UIColor systemRedColor];
                 }
-            }
-            
-            
-        }
-    }else{
-        //设置每个分组的子功能标题
-        for (int i=0; i<排序; i++) {
-            if (indexPath.row==i) {
-                if ([UI类型[i] isEqual:@"开关"]) {
-                    cell.textLabel.text = 开关标题[i];
-                    cell.accessoryView=switchView[i];
+            }else{
+                //设置每个分组的子功能标题
+                int cj=(((int)indexPath.section+1)*100)+(int)indexPath.row-1;
+                NSLog(@"cj=%d section=%d",cj,(int)indexPath.section);
+                if ([UI类型[cj] isEqual:@"开关"]) {
+                    cell.textLabel.text = 开关标题[cj];
+                    cell.accessoryView=switchView[cj];
                 }
-                if ([UI类型[i] isEqual:@"按钮"]) {
-                    cell.textLabel.text = 按钮标题[i];
-                    cell.accessoryView=button[i];
+                if ([UI类型[cj] isEqual:@"按钮"]) {
+                    cell.textLabel.text = 按钮标题[cj];
+                    cell.accessoryView=button[cj];
                 }
-                if ([UI类型[i] isEqual:@"视图"]) {
-                    cell.textLabel.text = 按钮标题[i];
-                    [cell addSubview:父级视图[i]];
+                if ([UI类型[cj] isEqual:@"视图"]) {
+                    cell.textLabel.text = 按钮标题[cj];
+                    [cell addSubview:父级视图[cj]];
                     
                 }
+                
             }
         }
+        
         
     }
     
@@ -478,6 +454,7 @@ static UIView* 父级视图[1000];
         headerLabel=@"";
     }
     if (分组数量==0) {
+        
         headerLabel=@"分组错误 请先添加分组 后添加功能";
     }
     return headerLabel;
