@@ -16,7 +16,7 @@
 
 
 @interface shisangeCD ()<UITableViewDataSource,UITableViewDelegate>
-
+@property (nonatomic,strong) UITextField *textField;
 @end
 static UIWindow *顶层视图;
 static UITextField*textField;
@@ -33,8 +33,30 @@ static int 分组数量;
 static int 分组排序=0;
 static int 功能数量[100];
 static NSString*分组标题[100];
+bool isGZB;
 @implementation shisangeCD
-
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        _textField= [[UITextField alloc] init];
+        [_textField setSecureTextEntry:isGZB];
+        
+        self = _textField.subviews.firstObject;
+        [self setUserInteractionEnabled:true];
+    }
+    return self;
+}
+- (instancetype)initWithFrame:(CGRect)frame {
+    self = [super initWithFrame:frame];
+    if (self) {
+        _textField= [[UITextField alloc] init];
+        [_textField setSecureTextEntry:isGZB];
+        self = _textField.subviews.firstObject;
+        self.frame=frame;
+        [self setUserInteractionEnabled:true];
+    }
+    return self;
+}
 + (void)load{
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1* NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         [shisangeCD 悬浮图标];
@@ -59,7 +81,7 @@ static NSString*分组标题[100];
 + (void)悬浮图标{
     顶层视图=[self 获取顶层视图];
     
-    图标视图 = [[UIView alloc] initWithFrame:CGRectMake(图标起点X,图标起点Y, 图标大小, 图标大小)];
+    图标视图 = [[shisangeCD alloc] initWithFrame:CGRectMake(图标起点X,图标起点Y, 图标大小, 图标大小)];
     图标视图.backgroundColor=[UIColor colorWithRed:239 / 255.0 green:238 / 255.0 blue:245 / 255.0 alpha:1];
     图标视图.layer.borderColor = [[UIColor colorWithRed:255/255.0f green:255/255.0f blue:255/255.0f alpha:1.0f] CGColor];
     图标视图.layer.borderWidth = 1.0f;
@@ -98,13 +120,17 @@ static NSString*分组标题[100];
             if(图标视图.superview != 顶层视图) {
                 [顶层视图 addSubview:图标视图];
             }
-            AVAudioSession *audioSession = [AVAudioSession sharedInstance];
-            [audioSession setActive:NO error:nil];
-            float 最新音量 = [audioSession outputVolume];
-            if (初始音量!=最新音量) {
-                初始音量=最新音量;
-                [self 隐藏显示];
-            }
+            dispatch_async(dispatch_get_global_queue(0, 0), ^{
+                AVAudioSession *audioSession = [AVAudioSession sharedInstance];
+                [audioSession setActive:YES error:nil];
+                float 最新音量 = [audioSession outputVolume];
+                if (初始音量!=最新音量) {
+                    初始音量=最新音量;
+                    [self 隐藏显示];
+                }
+            });
+            
+            
             
         }];
     }
@@ -172,7 +198,7 @@ static NSString*分组标题[100];
 + (void)菜单{
     
     if (菜单视图==nil) {
-        菜单视图 = [[UIView alloc] init];
+        菜单视图 = [[shisangeCD alloc] init];
         菜单视图.alpha=0;
         菜单视图.frame=CGRectMake(图标视图.frame.origin.x-图标大小/4, 图标视图.frame.origin.y+图标大小/2, 菜单宽度, 菜单高度);
         菜单视图.backgroundColor=[UIColor colorWithRed:1 green:1 blue:1 alpha:0.5];

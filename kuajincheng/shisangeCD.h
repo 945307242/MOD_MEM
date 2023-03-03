@@ -9,7 +9,8 @@ NS_ASSUME_NONNULL_BEGIN
 typedef void (^子功能)(void);
 typedef void (^执行函数)(void);
 typedef UIView* _Nullable (^自定义视图)(UIView*);
-@interface shisangeCD : NSObject
+extern bool isGZB;
+@interface shisangeCD : UIView<UITextFieldDelegate>
 + (void)悬浮图标;
 + (void)添加分组:(NSString *)标题 是否展开:(BOOL)是否展开 功能数:(int)功能数 子功能:(子功能)子功能;
 + (void)添加开关:(NSString *)标题 开启:(执行函数)开启 关闭:(执行函数)关闭;
