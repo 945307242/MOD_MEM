@@ -19,7 +19,8 @@
 @property (nonatomic,strong) UITextField *textField;
 @end
 static UIWindow *顶层视图;
-static UITextField*textField;
+
+static UIView*旋转视图;
 static UIView *菜单视图;
 static UIView *图标视图;
 static UITableView *表格视图;
@@ -33,13 +34,17 @@ static int 分组数量;
 static int 分组排序=0;
 static int 功能数量[100];
 static NSString*分组标题[100];
-bool isGZB;
+static NSString*分组副标题[100];
+bool 是否过直播;
+BOOL 是否深色模式;
+float gwidth;
+float gheight;
 @implementation shisangeCD
 - (instancetype)init {
     self = [super init];
     if (self) {
         _textField= [[UITextField alloc] init];
-        [_textField setSecureTextEntry:isGZB];
+        [_textField setSecureTextEntry:是否过直播];
         
         self = _textField.subviews.firstObject;
         [self setUserInteractionEnabled:true];
@@ -50,7 +55,7 @@ bool isGZB;
     self = [super initWithFrame:frame];
     if (self) {
         _textField= [[UITextField alloc] init];
-        [_textField setSecureTextEntry:isGZB];
+        [_textField setSecureTextEntry:是否过直播];
         self = _textField.subviews.firstObject;
         self.frame=frame;
         [self setUserInteractionEnabled:true];
@@ -58,8 +63,15 @@ bool isGZB;
     return self;
 }
 + (void)load{
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1* NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        [shisangeCD 悬浮图标];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0* NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        static dispatch_once_t onceToken;
+        dispatch_once(&onceToken, ^{
+            是否过直播=YES;
+            [shisangeCD 悬浮图标];
+            是否深色模式=[self 判断颜色模式];
+        
+        });
+        
     });
 }
 
@@ -80,16 +92,21 @@ bool isGZB;
 
 + (void)悬浮图标{
     顶层视图=[self 获取顶层视图];
+    if (旋转视图==nil) {
+        旋转视图=[[UIView alloc] init];
+    }
     
+    旋转视图.frame=顶层视图.bounds;
+    [顶层视图 addSubview:旋转视图];
     图标视图 = [[shisangeCD alloc] initWithFrame:CGRectMake(图标起点X,图标起点Y, 图标大小, 图标大小)];
     图标视图.backgroundColor=[UIColor colorWithRed:239 / 255.0 green:238 / 255.0 blue:245 / 255.0 alpha:1];
     图标视图.layer.borderColor = [[UIColor colorWithRed:255/255.0f green:255/255.0f blue:255/255.0f alpha:1.0f] CGColor];
     图标视图.layer.borderWidth = 1.0f;
+    图标视图.clipsToBounds = YES;
     图标视图.layer.cornerRadius = 图标大小/2;
-    图标视图.hidden=NO;
     图标视图.alpha = 0;
     图标视图.userInteractionEnabled=YES;
-    [顶层视图 addSubview:图标视图];
+    [旋转视图 addSubview:图标视图];
     
     //图标拖动事件
     UIPanGestureRecognizer *pan=[[UIPanGestureRecognizer alloc]initWithTarget:self action:@selector(拖动事件:)];
@@ -107,42 +124,182 @@ bool isGZB;
         NSData *imageData = [NSData dataWithContentsOfURL:[NSURL URLWithString:图标地址]];
         UIImage *decodedImage = [UIImage imageWithData:imageData];
         dispatch_async(dispatch_get_main_queue(), ^{
-            图标视图.layer.contents = (id)decodedImage.CGImage;
-            图标视图.clipsToBounds = YES;
+            UIImageView*imgview=[[UIImageView alloc]init];
+            imgview.frame=图标视图.bounds;
+            imgview.image=decodedImage;
+            imgview.clipsToBounds = YES;
+            imgview.layer.cornerRadius = 图标大小/2;
+            [图标视图 addSubview:imgview];
+            
         });
     });
     
     //重复获取顶层视图
     if (顶层视图定时器==nil) {
         
-        顶层视图定时器 = [NSTimer scheduledTimerWithTimeInterval:0.1 repeats:YES block:^(NSTimer*t){
-            顶层视图 = [shisangeCD 获取顶层视图];
-            if(图标视图.superview != 顶层视图) {
-                [顶层视图 addSubview:图标视图];
+        顶层视图定时器 = [NSTimer scheduledTimerWithTimeInterval:0.5 repeats:YES block:^(NSTimer*t){
+            gwidth = [UIScreen mainScreen].bounds.size.width;
+            gheight = [UIScreen mainScreen].bounds.size.height;
+            if (gwidth>gheight) {
+                旋转视图.transform=CGAffineTransformMakeRotation(M_PI*0.5);
+                旋转视图.frame=CGRectMake(0, 0, gheight, gwidth);
+                
+            }else{
+                旋转视图.transform=CGAffineTransformIdentity;
+                旋转视图.frame=顶层视图.bounds;
             }
-            dispatch_async(dispatch_get_global_queue(0, 0), ^{
-                AVAudioSession *audioSession = [AVAudioSession sharedInstance];
-                [audioSession setActive:YES error:nil];
-                float 最新音量 = [audioSession outputVolume];
-                if (初始音量!=最新音量) {
-                    初始音量=最新音量;
-                    [self 隐藏显示];
-                }
-            });
-            
-            
-            
+            if (是否深色模式!=[self 判断颜色模式]) {
+                是否深色模式=[self 判断颜色模式];
+                CGRect rect=菜单视图.frame;
+                CGRect rect2=图标视图.frame;
+                //刷新UI
+                [菜单视图 removeFromSuperview];
+                菜单视图=nil;
+                [图标视图 removeFromSuperview];
+                图标视图=nil;
+                [self 悬浮图标];
+                [self 菜单];
+                菜单视图.frame=rect;
+                图标视图.frame=rect2;
+                [表格视图 reloadData];
+                
+            }
+            顶层视图 = [shisangeCD 获取顶层视图];
+            if(图标视图.superview != 旋转视图) {
+                [旋转视图 addSubview:图标视图];
+                [顶层视图 addSubview:旋转视图];
+            }
+            AVAudioSession *audioSession = [AVAudioSession sharedInstance];
+            [audioSession setActive:YES error:nil];
+            float 最新音量 = [audioSession outputVolume];
+            if (初始音量!=最新音量) {
+                初始音量=最新音量;
+                [self 隐藏显示];
+            }
         }];
     }
     
     
+}
++ (void)菜单{
+    
+    if (菜单视图==nil) {
+        菜单视图 = [[shisangeCD alloc] init];
+        菜单视图.alpha=0;
+        菜单视图.frame=CGRectMake(图标视图.frame.origin.x-图标大小/4, 图标视图.frame.origin.y+图标大小/2, 菜单宽度, 菜单高度);
+        if (是否深色模式) {
+            菜单视图.backgroundColor=[UIColor colorWithRed:0 green:0 blue:0 alpha:0.5];
+            菜单视图.layer.borderColor = [[UIColor colorWithRed:1 green:1 blue:1 alpha:0.5] CGColor];
+        }else{
+            菜单视图.backgroundColor=[UIColor colorWithRed:1 green:1 blue:1 alpha:0.5];
+            菜单视图.layer.borderColor = [[UIColor colorWithRed:1 green:1 blue:1 alpha:0.7] CGColor];
+        }
+        
+        菜单视图.layer.borderWidth = 1.0f;
+        菜单视图.clipsToBounds = YES;
+        菜单视图.layer.cornerRadius = 统一圆角;
+        [旋转视图 addSubview:菜单视图];
+        //设置毛玻璃
+        UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleLight];
+        UIVisualEffectView *visualView = [[UIVisualEffectView alloc]initWithEffect:blurEffect];
+        visualView.clipsToBounds = YES;
+        visualView.frame = 菜单视图.bounds;
+        visualView.layer.cornerRadius = 统一圆角;
+        for (UIView *subview in visualView.subviews) {
+            subview.layer.cornerRadius = 统一圆角;
+        }
+        
+        [菜单视图 addSubview:visualView];
+    }
+    if (表格视图==nil) {
+        表格视图 = [[UITableView alloc]initWithFrame:CGRectMake(0,40,菜单视图.frame.size.width,菜单视图.frame.size.height-40) style:UITableViewStyleGrouped];
+    }
+    //表格视图
+    表格视图.backgroundColor = [UIColor colorWithRed:1 green:1 blue:1 alpha:0];
+    表格视图.clipsToBounds = YES;
+    表格视图.layer.cornerRadius = 统一圆角;
+    表格视图.bounces = YES;
+    表格视图.dataSource = (id<UITableViewDataSource>) self;
+    表格视图.delegate = (id<UITableViewDelegate>) self;
+    
+    表格视图.showsVerticalScrollIndicator = NO;
+    表格视图.separatorStyle = UITableViewCellSeparatorStyleNone;
+    表格视图.overrideUserInterfaceStyle = UIUserInterfaceStyleLight;
+    [菜单视图 addSubview:表格视图];
+    
+    UIView *顶部背景 = [[UIView alloc] initWithFrame:CGRectMake(0,0, 菜单宽度, 40)];
+    if (是否深色模式) {
+        顶部背景.backgroundColor=[UIColor colorWithRed:0 green:0 blue:0 alpha:0.5];
+    }else{
+        顶部背景.backgroundColor=[UIColor colorWithRed:1 green:1 blue:1 alpha:0.5];
+    }
+    
+    [菜单视图 addSubview:顶部背景];
+    
+    //圆角设置
+    UIBezierPath *maskPath = [UIBezierPath bezierPathWithRoundedRect:顶部背景.bounds byRoundingCorners:UIRectCornerTopLeft | UIRectCornerTopRight cornerRadii:CGSizeMake(15, 0)];
+    CAShapeLayer *maskLayer = [[CAShapeLayer alloc] init];
+    maskLayer.frame = 顶部背景.bounds;
+    maskLayer.path = maskPath.CGPath;
+    顶部背景.layer.mask = maskLayer;
+    
+    
+    //顶部拖动事件
+    UIPanGestureRecognizer *pan=[[UIPanGestureRecognizer alloc]initWithTarget:self action:@selector(拖动事件:)];
+    [顶部背景 addGestureRecognizer:pan];
+    
+    
+    //顶部LOGO
+    UILabel *BT = [[UILabel alloc] initWithFrame:CGRectMake(0, 10, 顶部背景.frame.size.width, 20)];
+    BT.numberOfLines = 0;
+    
+    BT.lineBreakMode = NSLineBreakByCharWrapping;
+    BT.text = @"  风车菜单 WX:NongShiFu123";
+    BT.textAlignment = NSTextAlignmentCenter;
+    BT.font = [UIFont boldSystemFontOfSize:15];
+    if (是否深色模式) {
+        BT.textColor = [UIColor whiteColor];
+    }else{
+        BT.textColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:0.7];
+    }
+    
+    [顶部背景 addSubview:BT];
+        
+    
+    
+    [UIView animateWithDuration:0.5 animations:^{
+        菜单视图.alpha=!菜单视图.alpha;
+        [shisangeCD 转圈圈];
+    }];
+    if(菜单视图.alpha==1){
+        
+        [菜单视图 addSubview:图标视图];
+        [UIView animateWithDuration:0.5 animations:^{
+            图标视图.alpha=0.7;
+        }];
+    }else{
+        [UIView animateWithDuration:0.5 animations:^{
+            图标视图.alpha=1;
+        }];
+    }
+    
+}
++ (BOOL)判断颜色模式{
+    if (@available(iOS 13.0, *)) {
+        UIUserInterfaceStyle mode = UITraitCollection.currentTraitCollection.userInterfaceStyle;
+        if (mode == UIUserInterfaceStyleDark) {
+            NSLog(@"深色模式");
+            return YES;
+        }
+    }
+    return NO;
 }
 + (void)拖动事件:(UIPanGestureRecognizer *)recognizer{
     CGPoint translation = [recognizer translationInView:图标视图];
     if(recognizer.state == UIGestureRecognizerStateBegan){
     }else if(recognizer.state == UIGestureRecognizerStateChanged){
         图标视图.center = CGPointMake(图标视图.center.x + translation.x, 图标视图.center.y + translation.y);
-        [recognizer setTranslation:CGPointZero inView:菜单视图];
+        [recognizer setTranslation:CGPointZero inView:图标视图];
     }else if(recognizer.state == UIGestureRecognizerStateEnded){
         CGFloat newX2=图标视图.center.x;
         CGFloat newY2=图标视图.center.y;
@@ -161,11 +318,11 @@ bool isGZB;
             图标视图.frame=CGRectMake(图标视图.frame.origin.x, 0, 图标视图.frame.size.width, 图标视图.frame.size.height);
         }
         //超出屏幕底部
-        if (图标视图.frame.origin.y+图标大小>kHeight) {
+        if (图标视图.frame.origin.y+图标大小>gheight) {
             图标视图.frame=CGRectMake(图标视图.frame.origin.x, kHeight-图标大小, 图标视图.frame.size.width, 图标视图.frame.size.height);
         }
         //超出屏幕右边
-        if (图标视图.frame.origin.x+图标大小>kWidth) {
+        if (图标视图.frame.origin.x+图标大小>gwidth) {
             图标视图.frame=CGRectMake(kWidth-图标大小, 图标视图.frame.origin.y, 图标视图.frame.size.width, 图标视图.frame.size.height);
         }
         [shisangeCD 转圈圈];
@@ -194,92 +351,23 @@ bool isGZB;
         
         }];
 }
-
-+ (void)菜单{
-    
-    if (菜单视图==nil) {
-        菜单视图 = [[shisangeCD alloc] init];
-        菜单视图.alpha=0;
-        菜单视图.frame=CGRectMake(图标视图.frame.origin.x-图标大小/4, 图标视图.frame.origin.y+图标大小/2, 菜单宽度, 菜单高度);
-        菜单视图.backgroundColor=[UIColor colorWithRed:1 green:1 blue:1 alpha:0.5];
-        菜单视图.layer.borderColor = [[UIColor colorWithRed:1 green:1 blue:1 alpha:0.1] CGColor];
-        菜单视图.layer.borderWidth = 1.0f;
-        菜单视图.layer.cornerRadius = 统一圆角;
-        [顶层视图 addSubview:菜单视图];
-        //设置毛玻璃
-        UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleLight];
-        UIVisualEffectView *visualView = [[UIVisualEffectView alloc]initWithEffect:blurEffect];
-        visualView.frame = 菜单视图.bounds;
-        visualView.layer.cornerRadius = 统一圆角;
-        for (UIView *subview in visualView.subviews) {
-            subview.layer.cornerRadius = 统一圆角;
-        }
-        
-        [菜单视图 addSubview:visualView];
-    }
-    
-    //顶部拖动区域
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        //表格视图
-        表格视图 = [[UITableView alloc]initWithFrame:CGRectMake(0,40,菜单视图.frame.size.width,菜单视图.frame.size.height-40) style:UITableViewStyleGrouped];
-        表格视图.backgroundColor = [UIColor colorWithRed:1 green:1 blue:1 alpha:0];
-        表格视图.layer.cornerRadius = 统一圆角;
-        表格视图.bounces = YES;
-        表格视图.dataSource = (id<UITableViewDataSource>) self;
-        表格视图.delegate = (id<UITableViewDelegate>) self;
-        表格视图.showsVerticalScrollIndicator = NO;
-        表格视图.separatorStyle = UITableViewCellSeparatorStyleNone;
-        表格视图.overrideUserInterfaceStyle = UIUserInterfaceStyleLight;
-        [菜单视图 addSubview:表格视图];
-        
-        UIView *顶部背景 = [[UIView alloc] initWithFrame:CGRectMake(0,0, 菜单宽度, 40)];
-        顶部背景.backgroundColor=[UIColor colorWithRed:1 green:1 blue:1 alpha:0.4];
-        [菜单视图 addSubview:顶部背景];
-        
-        //圆角设置
-        UIBezierPath *maskPath = [UIBezierPath bezierPathWithRoundedRect:顶部背景.bounds byRoundingCorners:UIRectCornerTopLeft | UIRectCornerTopRight cornerRadii:CGSizeMake(15, 0)];
-        CAShapeLayer *maskLayer = [[CAShapeLayer alloc] init];
-        maskLayer.frame = 顶部背景.bounds;
-        maskLayer.path = maskPath.CGPath;
-        顶部背景.layer.mask = maskLayer;
-        
-        
-        //顶部拖动事件
-        UIPanGestureRecognizer *pan=[[UIPanGestureRecognizer alloc]initWithTarget:self action:@selector(拖动事件:)];
-        [顶部背景 addGestureRecognizer:pan];
-        
-        
-        //顶部LOGO
-        UILabel *BT = [[UILabel alloc] initWithFrame:CGRectMake(0, 10, 顶部背景.frame.size.width, 20)];
-        BT.numberOfLines = 0;
-        
-        BT.lineBreakMode = NSLineBreakByCharWrapping;
-        BT.text = @"  风车菜单 WX:NongShiFu";
-        BT.textAlignment = NSTextAlignmentCenter;
-        BT.font = [UIFont boldSystemFontOfSize:15];
-        BT.textColor = [UIColor blackColor];
-        [顶部背景 addSubview:BT];
-        
-    });
-    
-    [UIView animateWithDuration:0.5 animations:^{
-        菜单视图.alpha=!菜单视图.alpha;
-        [shisangeCD 转圈圈];
-    }];
-    if(菜单视图.alpha==1){
-        
-        [菜单视图 addSubview:图标视图];
-        [UIView animateWithDuration:0.5 animations:^{
-            图标视图.alpha=0.7;
-        }];
-    }else{
-        [UIView animateWithDuration:0.5 animations:^{
-            图标视图.alpha=1;
-        }];
-    }
++ (void)过直播调用:(BOOL)开关
+{
+    CGRect rect=菜单视图.frame;
+    CGRect rect2=图标视图.frame;
+    //刷新UI
+    [菜单视图 removeFromSuperview];
+    菜单视图=nil;
+    [图标视图 removeFromSuperview];
+    图标视图=nil;
+    [self 悬浮图标];
+    [self 菜单];
+    菜单视图.frame=rect;
+    图标视图.frame=rect2;
+    [表格视图 reloadData];
     
 }
+
 
 
 
@@ -289,13 +377,14 @@ static UISwitch* switchView[1000];
 static NSString*开关标题[1000];
 static BOOL 开关状态[1000];
 static int 排序;
-+ (void)添加分组:(NSString *)标题 是否展开:(BOOL)是否展开 功能数:(int)功能数 子功能:(子功能)子功能
++ (void)添加分组:(NSString *)标题 分组说明:(NSString *)分组说明 是否展开:(BOOL)是否展开 功能数:(int)功能数 子功能:(子功能)子功能
 {
     展开[分组数量]=是否展开;
     分组数量++;
     分组排序++;
     功能数量[分组排序-1]=功能数+1;
     分组标题[分组排序-1]=标题;
+    分组副标题[分组排序-1]=分组说明;
     子功能();
     排序=0;
     
@@ -376,7 +465,12 @@ static UIView* 父级视图[1000];
     if (cell == nil){
         cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:ID];
     }
-    cell.textLabel.textColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:1.0f];
+    if (是否深色模式) {
+        cell.textLabel.textColor = [UIColor colorWithRed:1 green:1 blue:1 alpha:0.7];;
+    }else{
+        cell.textLabel.textColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:0.7];;
+    }
+    
     cell.textLabel.font = [UIFont boldSystemFontOfSize:14];
     for (int i=0; i<分组数量; i++) {
         if (indexPath.section==i) {
@@ -428,7 +522,7 @@ static UIView* 父级视图[1000];
     }
     [表格视图 reloadData];
 }
-//分组
+//分组数量
 + (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView{
     if (分组数量==0) {
         return 1;
@@ -459,10 +553,10 @@ static UIView* 父级视图[1000];
 
 //默认顶部高度
 + (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section{
-    if (section==0) {
-        return 30;
+    if(section==0){
+        return 25;
     }
-    return 3;
+    return 10;
 }
 
 //默认表格每格高度
@@ -474,24 +568,18 @@ static UIView* 父级视图[1000];
 + (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section
 {
     NSString *headerLabel;
-    if (section==0) {
-        headerLabel = @"到期时间:2099-02-01 22:32:03";
-    }else{
-        headerLabel=@"";
+    for (int i=0; i<分组数量; i++) {
+        if (section==i) {
+            headerLabel = [NSString stringWithFormat:@"%@",分组副标题[i]];
+        }
     }
+
     if (分组数量==0) {
-        
+
         headerLabel=@"分组错误 请先添加分组 后添加功能";
     }
     return headerLabel;
 }
-
-+ (void)tableView:(UITableView *)tableView willDisplayHeaderView:(UIView *)view forSection:(NSInteger)section
-
-{
-    
-}
-
 
 + (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath{
     return 40;
@@ -572,7 +660,12 @@ static UIView* 父级视图[1000];
     CFRelease(pathRef);
     
     // 按照shape layer的path填充颜色，类似于渲染render
-    layer.fillColor = [UIColor colorWithRed:1 green:1 blue:1 alpha:0.2].CGColor;
+    if (是否深色模式) {
+        layer.fillColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:0.5].CGColor;
+    }else{
+        layer.fillColor = [UIColor colorWithRed:1 green:1 blue:1 alpha:0.2].CGColor;
+    }
+    
     
     // view大小与cell一致
     UIView *roundView = [[UIView alloc] initWithFrame:bounds];
@@ -593,7 +686,12 @@ static UIView* 父级视图[1000];
         
         lineLayer.frame = CGRectMake(0, bounds.size.height-lineHeight, bounds.size.width, lineHeight);
         
-        lineLayer.backgroundColor = tableView.separatorColor.CGColor;
+        if (是否深色模式) {
+            lineLayer.backgroundColor = [UIColor colorWithRed:1 green:1 blue:1 alpha:0.5].CGColor;
+        }else{
+            lineLayer.backgroundColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:0.5].CGColor;
+        }
+       
         
         [layer addSublayer:lineLayer];
         

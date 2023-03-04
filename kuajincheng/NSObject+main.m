@@ -21,7 +21,7 @@
 {
     
     
-    [shisangeCD 添加分组:@"这是一个分组" 是否展开:NO 功能数:5  子功能:^{
+    [shisangeCD 添加分组:@"这是一个分组" 分组说明:@"分组1说明" 是否展开:NO 功能数:5  子功能:^{
         //创建一个自定义视图 例子===================================
         UIView *a=[[UIView alloc] initWithFrame:CGRectMake(15, 0, 270, 40)];//这个尺寸为在单元格中的坐标系
         a.backgroundColor=[UIColor systemBlueColor];//随便设置个背景红色
@@ -91,11 +91,13 @@
     }];
     //第二个分组一样
     
-    [shisangeCD 添加分组:@"这是第二分组" 是否展开:NO 功能数:3  子功能:^{
-        [shisangeCD 添加开关:@"20" 开启:^{
+    [shisangeCD 添加分组:@"这是一个分组" 分组说明:@"分组1说明" 是否展开:NO 功能数:5  子功能:^{
+        [shisangeCD 添加开关:@"过直播开关" 开启:^{
             NSLog(@"测试功能20开启");
+            [shisangeCD 过直播调用:YES];
         } 关闭:^{
             NSLog(@"测试功能20关闭");
+            [shisangeCD 过直播调用:NO];
         }];
         [shisangeCD 添加开关:@"21" 开启:^{
             NSLog(@"测试功能21开启");
